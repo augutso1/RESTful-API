@@ -8,7 +8,7 @@ Uma API RESTful construída com Go para gerenciar postagens de texto e analisar 
 - **Tecnologias**: Go com Gin para lidar com HTTP de forma rápida, MongoDB para armazenamento flexível.
 - **Preparada para o Futuro**: Projetada com extensibilidade em mente — conecte modelos de IA reais no futuro!
 
-## 🚀 Por que a Sentigo?
+## 🚀 Por que Sentigo?
 Criei esse projeto para aprimorar minhas habilidades de backend enquanto exploro análise de sentimento — um passo inicial rumo a sistemas baseados em IA, que me fascinam. É uma API limpa e funcional que demonstra design RESTful, integração com banco de dados e um toque de criatividade em engenharia.
 
 ## 🛠️ Como Começar
@@ -23,3 +23,38 @@ Criei esse projeto para aprimorar minhas habilidades de backend enquanto exploro
    ```bash
    git clone https://github.com/seuusuario/sentigo.git
    cd sentigo
+2. Instale as dependências:
+   ```bash
+   go mod tidy
+3. Inicie o MongoDB (local: mongod, ou use sua URI do Atlas).
+
+4. Inicie o servidor:
+   ```bash
+   go run main.go
+
+5. A API estará disponível em: http://localhost:8080.
+
+## 📁 Estrutura do Projeto
+```bash
+sentigo/
+├── main.go         # Lógica principal da API
+├── go.mod          # Configuração do módulo Go
+└── README.md       # Você está aqui!
+```
+## 🔧 Planos Futuros
+Adicionar suporte ao Docker para facilitar o deploy.
+Integrar um LLM real (ex.: via Hugging Face) para análise avançada de sentimento.
+Expandir endpoints (ex.: DELETE, UPDATE).
+
+## 💡 Construído Com
+Go - Linguagem backend
+Gin - Framework HTTP
+MongoDB - Banco de dados NoSQL
+
+## 🙌 Contribuições
+Sinta-se à vontade para fazer um fork, ajustar ou sugerir ideias! Estou aprendendo e crescendo — PRs são bem-vindos.
+
+## 📬 Contato
+Me encontre no [LinkedIn](https://www.linkedin.com/in/augutso1/) ou abra uma issue aqui.
+
+Desenvolvido por Augusto, entusiasta backend com um olho no futuro da IA.

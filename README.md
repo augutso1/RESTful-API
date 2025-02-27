@@ -47,9 +47,9 @@ Integrar um LLM real (ex.: via Hugging Face) para análise avançada de sentimen
 Expandir endpoints (ex.: DELETE, UPDATE).
 
 ## 💡 Construído Com
-Go - Linguagem backend
-Gin - Framework HTTP
-MongoDB - Banco de dados NoSQL
+Go - Linguagem backend  
+Gin - Framework HTTP  
+MongoDB - Banco de dados NoSQL  
 
 ## 🙌 Contribuições
 Sinta-se à vontade para fazer um fork, ajustar ou sugerir ideias! Estou aprendendo e crescendo — PRs são bem-vindos.

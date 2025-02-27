@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -14,12 +16,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// O post é o modelo de dados que será salvo no banco de dados
+// Post é o modelo de dados que será salvo no banco de dados
 type Post struct {
 	ID        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	Content   string             `json:"content" binding:"required" bson:"content"`
 	Sentiment string             `json:"sentiment" bson:"sentiment"`
 	CreatedAt time.Time          `json:"created_at" bson:"created_at"`
+	Response  string             `json:"response" bson:"response"`
 }
 
 // PostRequest representa o corpo da requisição que será enviado para o servidor
@@ -27,6 +30,50 @@ type PostRequest struct {
 	Content string `json:"content" binding:"required"`
 }
 
+type ollamaRequest struct {
+	Model  string `json:"model"`
+	Prompt string `json:"prompt"`
+	Stream bool   `json:"stream"`
+}
+
+type ollamaResponse struct {
+	Response string `json:"response"`
+}
+
+func callOllama(payload ollamaRequest) string {
+	jsonData, _ := json.Marshal(payload)
+	resp, err := http.Post("http://localhost:11434/api/generate", "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		log.Printf("Ollama error: %v", err)
+		return "Error"
+	}
+	defer resp.Body.Close()
+	var ollamaResp ollamaResponse
+	json.NewDecoder(resp.Body).Decode(&ollamaResp)
+	return ollamaResp.Response
+}
+
+func analyzeWithOllama(content string) (sentiment, response string) {
+	sentimentPayload := ollamaRequest{
+		Model:  "mistral:7b",
+		Prompt: "Analyze the sentiment of this text: " + content,
+		Stream: false,
+	}
+
+	sentimentResp := callOllama(sentimentPayload)
+
+	// Response generation
+	responsePayload := ollamaRequest{
+		Model:  "mistral:7b",
+		Prompt: "Respond briefly to this: " + content,
+		Stream: false,
+	}
+	responseResp := callOllama(responsePayload)
+
+	return sentimentResp, responseResp
+}
+
+var client *mongo.Client
 var collection *mongo.Collection
 
 func main() {
@@ -34,7 +81,8 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
+	var err error
+	client, err = mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -51,6 +99,7 @@ func main() {
 
 	// Cria o roteador do Gin
 	router := gin.Default()
+	router.Use(cors.Default())
 
 	// Define as rotas
 	router.POST("/posts", createPost)
@@ -62,8 +111,8 @@ func main() {
 }
 
 func createPost(c *gin.Context) {
-	var request PostRequest
 
+	var request PostRequest
 	// Associa o JSON da requisição ao struct
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -74,9 +123,11 @@ func createPost(c *gin.Context) {
 	post := Post{
 		ID:        primitive.NewObjectID(),
 		Content:   request.Content,
-		Sentiment: analyzeSentiment(request.Content),
 		CreatedAt: time.Now(),
 	}
+
+	// Analisa o sentimento e gera resposta usando Ollama
+	post.Sentiment, post.Response = analyzeWithOllama(request.Content)
 
 	// Insere o post no MongoDB
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -114,49 +165,4 @@ func getPosts(c *gin.Context) {
 
 	// Retorna os posts
 	c.JSON(http.StatusOK, posts)
-}
-
-func analyzeSentiment(content string) string {
-	// Análise de sentimento simples baseada em palavras-chave
-	positiveWords := []string{
-		"adoro",
-		"amo",
-		"bom",
-		"ótimo",
-		"excelente",
-		"feliz",
-		"gosto",
-		"legal",
-		"maravilhoso",
-		"perfeito",
-	}
-
-	negativeWords := []string{
-		"odeio",
-		"péssimo",
-		"ruim",
-		"terrível",
-		"horrível",
-		"triste",
-		"detesto",
-		"chato",
-		"irritante",
-		"frustrado",
-	}
-
-	contentLower := strings.ToLower(content)
-
-	for _, word := range positiveWords {
-		if strings.Contains(contentLower, word) {
-			return "positive"
-		}
-	}
-
-	for _, word := range negativeWords {
-		if strings.Contains(contentLower, word) {
-			return "negative"
-		}
-	}
-
-	return "neutral"
 }

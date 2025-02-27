@@ -4,11 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const postsContainer = document.getElementById('posts');
     const latestResponse = document.getElementById('latestResponse');
 
-    // Initialize latest response
     latestResponse.classList.add('empty');
     latestResponse.textContent = 'AI response will appear here...';
 
-    // Fetch and display existing posts
     async function fetchPosts() {
         try {
             const response = await fetch('http://localhost:8080/posts');
@@ -19,9 +17,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Display posts in the container
     function displayPosts(posts) {
-        postsContainer.innerHTML = posts.map(post => `
+
+        const sortedPosts = [...posts].sort((a, b) => 
+            new Date(b.created_at) - new Date(a.created_at)
+        );
+
+        postsContainer.innerHTML = sortedPosts.map(post => `
             <div class="post">
                 <div class="post-content">${post.content}</div>
                 <div class="post-metadata">
@@ -35,7 +37,6 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('');
     }
 
-    // Handle form submission
     submitButton.addEventListener('click', async () => {
         const content = postContent.value.trim();
         if (!content) return;
@@ -54,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.ok) {
                 const result = await response.json();
-                // Update latest response
+
                 latestResponse.classList.remove('empty');
                 latestResponse.innerHTML = `
                     <div class="post-content">${result.content}</div>
@@ -67,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 
                 postContent.value = '';
-                fetchPosts(); // Refresh the posts list
+                fetchPosts(); 
             }
         } catch (error) {
             console.error('Error creating post:', error);
@@ -77,6 +78,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Initial load of posts
     fetchPosts();
 }); 
